@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>
+			Loan - Sample Calculations
+		</title>
+		<script>
+			var loan = 0;
+			var totalLoan = 0;
+			var below18 = 0.001; // 0.1%
+			var below24 = 0.0015; // 0.15%
+			var cicilan3x = 0;
+			var historyPembayaran = 0;
+			var totalLoanTerbayar = 0;
+		
+			function getDateTimeNowInString(){
+				return new Date().getDate() + "/" + (new Date().getMonth() + 1) + "/" + new Date().getFullYear();
+			}
+		
+			function btnPinjamSekarang_OnClick(){
+				loan = document.getElementById('txtLoan').value;
+				totalLoan = loan;
+				document.getElementById('spanLoanValue').innerHTML = loan.toString();
+				document.getElementById('spanLoanDate').innerHTML = "" + getDateTimeNowInString() + "";
+				document.getElementById('sekarangHariKe').disabled = false;
+				document.getElementById('sekarangHariKe').onchange(this.value);
+				historyPembayaran = 0;
+			}
+		
+			function sekarangHariKe_OnChange(hariKe){
+				var tagihan = 0;
+				var bunga = 0;
+				
+				if(historyPembayaran == 0){
+					if(hariKe < 8){
+						bunga += 0;
+					}
+					else if(hariKe >= 8 && hariKe <= 17){
+						bunga += below18 * hariKe * loan;
+					}
+					else if(hariKe >= 18 && hariKe <= 23){
+						bunga += (below18 * 17 * loan) + (below24 * (hariKe-17) * loan);
+					}
+					else if(hariKe >= 24){
+						if(historyPembayaran == 0){
+							if(confirm('Mau cicilan 3x per-30 hari ?')){
+								//alert('mau');
+								cicilan3x = 1;
+								bunga += (below18 * 17 * loan) + (below24 * (23-18) * loan);
+							} else {
+								//alert('tidak mau');
+								cicilan3x = 2;
+								bunga += (below18 * 17 * loan) + (below24 * ((hariKe-1)-18) * loan);
+							}
+						} 
+					}
+				}
+				
+				if(cicilan3x == 1) {
+					var bungaCicilan = 0;
+					if(hariKe >= 24 + (30 * historyPembayaran) && hariKe <= 24 + (30 * (historyPembayaran + 1) ) ){
+						bungaCicilan = document.getElementById('txtBungaCicilanPerHari').value;
+						bungaCicilan = (bungaCicilan/100) * 30 * loan; // 0.12% * 30 hari * loan
+					}
+					
+					if(loan > 1){					
+						tagihan = parseInt(bunga.toString()) + parseInt((totalLoan/3).toString()) + parseInt(bungaCicilan.toString());
+						//alert(parseInt(bunga.toString()) + " " + parseInt((totalLoan/3).toString()) + " " + parseInt(bungaCicilan.toString()));
+					}
+					
+					if(historyPembayaran == 0){
+						var denda = document.getElementById('txtDenda').value;
+						tagihan += parseInt(denda.toString());
+					}
+				} else if(cicilan3x == 2) { // tidak mau cicilan 3x
+					tagihan = parseInt(loan.toString()) + parseInt(bunga.toString());
+				} else {
+					tagihan = parseInt(loan.toString()) + parseInt(bunga.toString());
+				}
+				
+				
+				document.getElementById('txtTagihanTerkini').value = tagihan;
+			}
+			
+			function btnBayar_OnClick(){
+				historyPembayaran += 1;
+				loan -= parseInt((totalLoan/3).toString());
+				
+				var divHistory = document.getElementById("divHistoryPembayaran");
+				var bHistoryPembayaranTotal = document.getElementById("bHistoryPembayaranTotal");
+				
+				var tagihan = document.getElementById('txtTagihanTerkini').value;
+				totalLoanTerbayar += parseInt(tagihan.toString());
+				divHistory.innerHTML += getDateTimeNowInString() + " - " + tagihan + "<br/>";
+				bHistoryPembayaranTotal.innerHTML = totalLoanTerbayar;
+				
+				var hariKe = document.getElementById('sekarangHariKe').value;
+				sekarangHariKe_OnChange(hariKe);
+			}
+			
+			
+		</script>
+	</head>
+	<body>
+		<h1>Loan - Sample Calculations</h1>
+		<hr/>
+		<h2>Parameters</h2>
+		<label>Denda - (Khusus cicilan 3x, pada cicilan pertama): </label>
+		<input id = "txtDenda" type="text" value="50000" />
+		<br/>
+		<label>Bunga cicilan per-hari - (Khusus cicilan 3x): </label>
+		<input id = "txtBungaCicilanPerHari" type="text" value="0.12" />%
+		
+		<h2>Loan</h2>
+		<label>Pinjam : </label>
+		<input type="text" value="1000000" id="txtLoan" />
+		<input type="button" value="Pinjam Sekarang" onclick="btnPinjamSekarang_OnClick()"/>
+		<br/>
+		<br/>
+		<label>Total pinjaman <b><span id="spanLoanValue">...</span></b> sejak tanggal <b><span id="spanLoanDate"></span></b></label>
+		
+		<h2>Tagihan</h2>
+		<label>Sekarang hari ke- : </label>
+		<input type="number" id="sekarangHariKe" onchange="sekarangHariKe_OnChange(this.value)" style="width:100px;" disabled=""/>
+		<br/>
+		<label>Tagihan terkini : </label>
+		<input type="text" value="1000000" id="txtTagihanTerkini" disabled=""/>
+		<input type="button" value="Bayar" onclick = "btnBayar_OnClick()"/>
+		
+		<h2>History Pembayaran</h2>
+		<b>Total Bayar: </b><b id="bHistoryPembayaranTotal">0</b>
+		<div id="divHistoryPembayaran" style="background-color:whitesmoke; height:100px;">
+		</div>
+	</body>
+</html>
